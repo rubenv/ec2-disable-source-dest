@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/certifi/gocertifi"
-	"github.com/kr/pretty"
 )
 
 func main() {
@@ -37,7 +36,7 @@ func do() error {
 		return err
 	}
 
-	metadata := ec2metadata.New(sess, aws.NewConfig().WithLogLevel(aws.LogDebugWithHTTPBody))
+	metadata := ec2metadata.New(sess)
 
 	info, err := metadata.GetInstanceIdentityDocument()
 	if err != nil {
@@ -46,21 +45,14 @@ func do() error {
 
 	conf := aws.NewConfig().
 		WithRegion(info.Region).
-		WithHTTPClient(client).
-		WithLogLevel(aws.LogDebugWithHTTPBody)
-
+		WithHTTPClient(client)
 	ec2svc := ec2.New(sess, conf)
 
-	resp, err := ec2svc.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
+	_, err = ec2svc.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
 		InstanceId: aws.String(info.InstanceID),
 		SourceDestCheck: &ec2.AttributeBooleanValue{
 			Value: aws.Bool(false),
 		},
 	})
-	if err != nil {
-		return err
-	}
-
-	pretty.Log(resp)
-	return nil
+	return err
 }
