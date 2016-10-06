@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:edge
 MAINTAINER Ruben Vermeersch <ruben@rocketeer.be>
 
 ENV GOROOT=/usr/lib/go \
