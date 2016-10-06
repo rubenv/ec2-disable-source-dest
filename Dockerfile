@@ -8,7 +8,7 @@ ENV GOROOT=/usr/lib/go \
 
 ADD main.go /gopath/src/github.com/rubenv/ec2-disable-source-dest/
 
-RUN apk add --update go git openssh ca-certificates && \
+RUN apk add --update go git openssh && \
     go get -v github.com/rubenv/ec2-disable-source-dest/... && \
     go install -v github.com/rubenv/ec2-disable-source-dest && \
     apk del go git openssh && \
