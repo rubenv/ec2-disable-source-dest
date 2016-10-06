@@ -52,7 +52,6 @@ func do() error {
 	ec2svc := ec2.New(sess, conf)
 
 	resp, err := ec2svc.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
-		Attribute:  aws.String(ec2.InstanceAttributeNameSourceDestCheck),
 		InstanceId: aws.String(info.InstanceID),
 		SourceDestCheck: &ec2.AttributeBooleanValue{
 			Value: aws.Bool(false),
