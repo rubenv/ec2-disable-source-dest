@@ -41,4 +41,7 @@ Type=oneshot
 RemainAfterExit=yes
 Restart=on-failure
 ExecStart=/usr/bin/docker run --rm rubenv/ec2-disable-source-dest
+
+[Install]
+WantedBy=multi-user.target
 ```
