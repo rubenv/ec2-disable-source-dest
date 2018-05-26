@@ -1,20 +1,17 @@
-FROM alpine:latest
-MAINTAINER Ruben Vermeersch <ruben@rocketeer.be>
+# Stage: build
+FROM golang:alpine AS build
 
-ENV GOROOT=/usr/lib/go \
-    GOPATH=/gopath     \
-    GOBIN=/gopath/bin  \
-    PATH=$PATH:$GOROOT/bin:$GOPATH/bin \
-    CGO_ENABLED=0
+RUN apk add --no-cache git upx
 
-ADD main.go /gopath/src/github.com/rubenv/ec2-disable-source-dest/
+WORKDIR /go/src/app
+COPY *.go ./
+RUN go get -d -v ./...
 
-RUN apk add --update go git openssh musl-dev && \
-    go get -v github.com/rubenv/ec2-disable-source-dest/... && \
-    go install -v github.com/rubenv/ec2-disable-source-dest && \
-    apk del go git openssh musl-dev && \
-    mv $GOPATH/bin/ec2-disable-source-dest /usr/bin/ && \
-    rm -rf $GOPATH && \
-    rm -rf /var/cache/apk/*
+RUN CGO_ENABLED=0 go build -o disable-check -v main.go
+RUN upx --brute disable-check
 
-CMD ["ec2-disable-source-dest"]
+# Stage: package
+FROM scratch
+LABEL maintainer="Ruben Vermeersch <ruben@rocketeer.be>"
+COPY --from=build /go/src/app/disable-check /
+ENTRYPOINT ["/disable-check"]
