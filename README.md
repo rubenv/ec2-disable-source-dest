@@ -25,14 +25,25 @@ Simply run it inside your EC2 instance:
 
 ```shell
 docker run  \
-  --mount type=bind,source=/etc/ssl/certs/ca-certificates.crt,destination=/etc/ssl/certs,readonly \
-  -e 'SSL_CERT_DIR=/etc/ssl/certs' \
   --net=host \
   --rm \
   rubenv/ec2-disable-source-dest
 ```
-Note that this image does not include SSL certificates required to
-trust the AWS EC2 API hosts. Be sure to [mount certificates you trust into the container](https://docs.docker.com/storage/bind-mounts/#use-a-read-only-bind-mount).
+Note that this image does include the SSL certificates required to
+trust the AWS EC2 API hosts, but if you'd rather use your own, you can
+[mount certificates you trust into the
+container](https://docs.docker.com/storage/bind-mounts/#use-a-read-only-bind-mount)
+and set the "SSL_CERT_FILE" environment variable to point to your
+mounted file instead:
+
+```shell
+docker run  \
+  --mount type=bind,source=/etc/ssl/certs/ca-certificates.crt,destination=/etc/ssl/certs/ca-certificates.crt,readonly \
+  --env 'SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt' \
+  --net=host \
+  --rm \
+  rubenv/ec2-disable-source-dest
+```
 
 You'll need to set up an appropriate IAM role/policy for these
 instances that is capable of using [the `ec2:ModifyInstanceAttribute`
@@ -52,18 +63,9 @@ ConditionPathExists=!/.disabled-src-dest-check
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# Optimization: Even though we'll only use one file, Go's
-# "crypto/x509" package will always scan at least one directory, even
-# when pointed at a specific file with the related SSL_CERT_FILE
-# variable. Rather than reading that file first and nominating a
-# nonexistent directory, point it at the directory and let it find the
-# one file there.
-Environment=SSL_CERT_DIR=/etc/ssl/certs
 ExecStart=/usr/bin/sudo /usr/bin/rkt --insecure-options=image run \
   --net=host \
   --dns=host \
-  --volume certs,kind=host,source=/etc/ssl/certs/ca-certificates.crt,readOnly=true \
-  --mount  volume=certs,target=/etc/ssl/certs/ca-certificates.crt \
   docker://rubenv/ec2-disable-source-dest
 ExecStartPost=/usr/bin/touch /.disabled-src-dest-check
 ExecStartPost=-/usr/bin/sudo /usr/bin/rkt gc --grace-period=0s
